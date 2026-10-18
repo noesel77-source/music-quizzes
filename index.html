@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Instrumente erkennen – Hörquiz</title><style>
 :root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#182338;background:#f4f7fb}body{margin:0}main{max-width:780px;margin:30px auto;padding:0 16px 50px}header,.question,#results{background:white;border:1px solid #dce3ee;border-radius:15px;padding:22px;margin-bottom:16px}h1{margin:0 0 8px;font-size:1.7rem}h2{font-size:1.14rem;margin:0 0 14px}p{line-height:1.5}.muted{color:#52627a}.video{aspect-ratio:16/9;background:#111;border-radius:9px;overflow:hidden;margin:14px 0}.video iframe{width:100%;height:100%;border:0}.answers{display:grid;grid-template-columns:1fr 1fr;gap:9px}.answers label{display:block;border:1px solid #b9c8dd;padding:12px;border-radius:9px;cursor:pointer}.answers label:has(input:checked){background:#e3f0ff;border-color:#2868bd}button{background:#175fba;color:white;border:0;border-radius:9px;padding:13px 20px;font-weight:700;font-size:1rem;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}.status{margin-top:10px;color:#42556e}.correct{color:#14783d}.wrong{color:#ad3333}footer{color:#52627a;font-size:.85rem}a{color:#175fba}@media(max-width:500px){.answers{grid-template-columns:1fr}header,.question,#results{padding:15px}}
-</style></head><body><main><header><h1>🎧 Instrumente erkennen</h1><p>Musik · Jahrgang 7 · 10 Hörbeispiele</p><p class="muted">Höre dir jeden kurzen Ausschnitt an. Welches Instrument ist zu hören? Wähle jeweils eine Antwort. Du kannst die Ausschnitte mehrfach abspielen.</p><p><strong>Hinweis:</strong> YouTube zeigt möglicherweise die Instrumente im Bild. Für einen echten Hörtest schaue beim Abspielen weg.</p></header><div id="quiz"></div><button id="grade" type="button">Antworten auswerten</button><section id="results" hidden aria-live="polite"></section><footer><p>Audioquelle: <a href="https://www.youtube.com/watch?v=EfedK-dqXWc" target="_blank" rel="noopener">Instruments of the Orchestra – The Musicologist (YouTube)</a>. Die Ausschnitte werden direkt von YouTube eingebettet und nicht heruntergeladen.</p><p>Bei YouTube-Einbettungen kann die Wiedergabe von Browser- und Videoeinstellungen abhängen. Bei Bedarf das Video direkt auf YouTube öffnen.</p></footer></main><script>
+</style></head><body><main><header><h1>🎧 Instrumente erkennen</h1><p>Musik · Jahrgang 7 · 10 Hörbeispiele</p><p class="muted">Höre dir jeden kurzen Ausschnitt an. Welches Instrument ist zu hören? Wähle jeweils eine Antwort. Du kannst die Ausschnitte mehrfach abspielen. Bei jedem neuen Aufruf werden Fragen und Antworten neu gemischt.</p><p><strong>Hinweis:</strong> YouTube zeigt möglicherweise die Instrumente im Bild. Für einen reinen Hörtest schaue beim Abspielen weg. Die YouTube-Videos müssen sichtbar bleiben.</p></header><div id="quiz"></div><button id="grade" type="button">Antworten auswerten</button><section id="results" hidden aria-live="polite"></section><footer><p>Audioquelle: <a href="https://www.youtube.com/watch?v=EfedK-dqXWc" target="_blank" rel="noopener">Instruments of the Orchestra – The Musicologist (YouTube)</a>. Die Ausschnitte werden direkt von YouTube eingebettet und nicht heruntergeladen.</p><p>Bei YouTube-Einbettungen kann die Wiedergabe von Browser- und Videoeinstellungen abhängen. Bei Bedarf das Video direkt auf YouTube öffnen.</p></footer></main><script>
 // Start- und Endzeiten in Sekunden: aus den vom Lehrer bereitgestellten Kapitelmarken.
 // Jede Endzeit liegt zwei Sekunden vor Beginn des nächsten Kapitels.
 const videoId='EfedK-dqXWc';
@@ -17,10 +17,20 @@ const questions=[
  {instrument:'Trompete',start:251,end:266,choices:['Trompete','Waldhorn','Posaune','Tuba']},
  {instrument:'Glockenspiel',start:299,end:312,choices:['Klavier','Glockenspiel','Pauke','Harfe']}
 ];
+// Fisher-Yates: unabhängige zufällige Reihenfolge bei jedem Seitenaufruf.
+function shuffle(items){
+ const result=[...items];
+ for(let i=result.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [result[i],result[j]]=[result[j],result[i]];
+ }
+ return result;
+}
+const randomizedQuestions=shuffle(questions).map(q=>({...q,choices:shuffle(q.choices)}));
 const quiz=document.getElementById('quiz');
-questions.forEach((q,i)=>{
+randomizedQuestions.forEach((q,i)=>{
  const section=document.createElement('section');section.className='question';
- const heading=document.createElement('h2');heading.textContent=`Frage ${i+1} von ${questions.length}: Welches Instrument hörst du?`;section.append(heading);
+ const heading=document.createElement('h2');heading.textContent=`Frage ${i+1} von ${randomizedQuestions.length}: Welches Instrument hörst du?`;section.append(heading);
  const video=document.createElement('div');video.className='video';
  const frame=document.createElement('iframe');frame.loading=i<2?'eager':'lazy';frame.title=`Hörbeispiel ${i+1}`;frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';frame.referrerPolicy='strict-origin-when-cross-origin';frame.allowFullscreen=true;
  frame.src=`https://www.youtube-nocookie.com/embed/${videoId}?start=${q.start}&end=${q.end}&rel=0&playsinline=1`;
@@ -31,7 +41,7 @@ questions.forEach((q,i)=>{
 });
 document.getElementById('grade').addEventListener('click',()=>{
  let score=0,answered=0;
- questions.forEach((q,i)=>{const selected=document.querySelector(`input[name="q${i}"]:checked`);const status=document.getElementById(`status${i}`);status.className='status';if(selected){answered++;if(selected.value===q.instrument){score++;status.textContent='✓ Richtig!';status.classList.add('correct')}else{status.textContent=`✗ Richtige Antwort: ${q.instrument}`;status.classList.add('wrong')}}else{status.textContent=`Nicht beantwortet. Richtige Antwort: ${q.instrument}`;status.classList.add('wrong')}});
- const result=document.getElementById('results');result.hidden=false;result.innerHTML=`<h2>Dein Ergebnis: ${score} / ${questions.length}</h2><p>Beantwortet: ${answered} von ${questions.length}. Du kannst Antworten ändern und erneut auswerten.</p>`;result.scrollIntoView({behavior:'smooth',block:'start'});
+ randomizedQuestions.forEach((q,i)=>{const selected=document.querySelector(`input[name="q${i}"]:checked`);const status=document.getElementById(`status${i}`);status.className='status';if(selected){answered++;if(selected.value===q.instrument){score++;status.textContent='✓ Richtig!';status.classList.add('correct')}else{status.textContent=`✗ Richtige Antwort: ${q.instrument}`;status.classList.add('wrong')}}else{status.textContent=`Nicht beantwortet. Richtige Antwort: ${q.instrument}`;status.classList.add('wrong')}});
+ const result=document.getElementById('results');result.hidden=false;result.innerHTML=`<h2>Dein Ergebnis: ${score} / ${randomizedQuestions.length}</h2><p>Beantwortet: ${answered} von ${randomizedQuestions.length}. Du kannst Antworten ändern und erneut auswerten.</p>`;result.scrollIntoView({behavior:'smooth',block:'start'});
 });
 </script></body></html>
