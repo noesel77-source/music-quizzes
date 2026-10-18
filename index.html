@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Instrumente erkennen – Hörquiz</title><style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#182338;background:#f4f7fb}body{margin:0}main{max-width:780px;margin:30px auto;padding:0 16px 50px}header,.question,#results{background:white;border:1px solid #dce3ee;border-radius:15px;padding:22px;margin-bottom:16px}h1{margin:0 0 8px;font-size:1.7rem}h2{font-size:1.14rem;margin:0 0 14px}p{line-height:1.5}.muted{color:#52627a}.video{aspect-ratio:16/9;background:#111;border-radius:9px;overflow:hidden;margin:14px 0}.video iframe{width:100%;height:100%;border:0}.answers{display:grid;grid-template-columns:1fr 1fr;gap:9px}.answers label{display:block;border:1px solid #b9c8dd;padding:12px;border-radius:9px;cursor:pointer}.answers label:has(input:checked){background:#e3f0ff;border-color:#2868bd}button{background:#175fba;color:white;border:0;border-radius:9px;padding:13px 20px;font-weight:700;font-size:1rem;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}.status{margin-top:10px;color:#42556e}.correct{color:#14783d}.wrong{color:#ad3333}footer{color:#52627a;font-size:.85rem}a{color:#175fba}@media(max-width:500px){.answers{grid-template-columns:1fr}header,.question,#results{padding:15px}}
+</style></head><body><main><header><h1>🎧 Instrumente erkennen</h1><p>Musik · Jahrgang 7 · 10 Hörbeispiele</p><p class="muted">Höre dir jeden kurzen Ausschnitt an. Welches Instrument ist zu hören? Wähle jeweils eine Antwort. Du kannst die Ausschnitte mehrfach abspielen.</p><p><strong>Hinweis:</strong> YouTube zeigt möglicherweise die Instrumente im Bild. Für einen echten Hörtest schaue beim Abspielen weg.</p></header><div id="quiz"></div><button id="grade" type="button">Antworten auswerten</button><section id="results" hidden aria-live="polite"></section><footer><p>Audioquelle: <a href="https://www.youtube.com/watch?v=EfedK-dqXWc" target="_blank" rel="noopener">Instruments of the Orchestra – The Musicologist (YouTube)</a>. Die Ausschnitte werden direkt von YouTube eingebettet und nicht heruntergeladen.</p><p>Bei YouTube-Einbettungen kann die Wiedergabe von Browser- und Videoeinstellungen abhängen. Bei Bedarf das Video direkt auf YouTube öffnen.</p></footer></main><script>
+// Start- und Endzeiten in Sekunden: aus den vom Lehrer bereitgestellten Kapitelmarken.
+// Jede Endzeit liegt zwei Sekunden vor Beginn des nächsten Kapitels.
+const videoId='EfedK-dqXWc';
+const questions=[
+ {instrument:'Violine',start:11,end:28,choices:['Violine','Viola','Cello','Kontrabass']},
+ {instrument:'Cello',start:48,end:66,choices:['Kontrabass','Cello','Viola','Violine']},
+ {instrument:'Kontrabass',start:68,end:90,choices:['Tuba','Cello','Kontrabass','Fagott']},
+ {instrument:'Oboe',start:111,end:124,choices:['Klarinette','Flöte','Englischhorn','Oboe']},
+ {instrument:'Querflöte',start:126,end:141,choices:['Querflöte','Piccolo','Oboe','Klarinette']},
+ {instrument:'Klarinette',start:156,end:172,choices:['Fagott','Klarinette','Oboe','Querflöte']},
+ {instrument:'Fagott',start:174,end:190,choices:['Posaune','Kontrafagott','Fagott','Klarinette']},
+ {instrument:'Tuba',start:213,end:229,choices:['Waldhorn','Trompete','Posaune','Tuba']},
+ {instrument:'Trompete',start:251,end:266,choices:['Trompete','Waldhorn','Posaune','Tuba']},
+ {instrument:'Glockenspiel',start:299,end:312,choices:['Klavier','Glockenspiel','Pauke','Harfe']}
+];
+const quiz=document.getElementById('quiz');
+questions.forEach((q,i)=>{
+ const section=document.createElement('section');section.className='question';
+ const heading=document.createElement('h2');heading.textContent=`Frage ${i+1} von ${questions.length}: Welches Instrument hörst du?`;section.append(heading);
+ const video=document.createElement('div');video.className='video';
+ const frame=document.createElement('iframe');frame.loading=i<2?'eager':'lazy';frame.title=`Hörbeispiel ${i+1}`;frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';frame.referrerPolicy='strict-origin-when-cross-origin';frame.allowFullscreen=true;
+ frame.src=`https://www.youtube-nocookie.com/embed/${videoId}?start=${q.start}&end=${q.end}&rel=0&playsinline=1`;
+ video.append(frame);section.append(video);
+ const choices=document.createElement('div');choices.className='answers';
+ q.choices.forEach((choice,j)=>{const label=document.createElement('label');const input=document.createElement('input');input.type='radio';input.name=`q${i}`;input.value=choice;label.append(input,document.createTextNode(' '+choice));choices.append(label)});
+ section.append(choices);const status=document.createElement('p');status.className='status';status.id=`status${i}`;section.append(status);quiz.append(section);
+});
+document.getElementById('grade').addEventListener('click',()=>{
+ let score=0,answered=0;
+ questions.forEach((q,i)=>{const selected=document.querySelector(`input[name="q${i}"]:checked`);const status=document.getElementById(`status${i}`);status.className='status';if(selected){answered++;if(selected.value===q.instrument){score++;status.textContent='✓ Richtig!';status.classList.add('correct')}else{status.textContent=`✗ Richtige Antwort: ${q.instrument}`;status.classList.add('wrong')}}else{status.textContent=`Nicht beantwortet. Richtige Antwort: ${q.instrument}`;status.classList.add('wrong')}});
+ const result=document.getElementById('results');result.hidden=false;result.innerHTML=`<h2>Dein Ergebnis: ${score} / ${questions.length}</h2><p>Beantwortet: ${answered} von ${questions.length}. Du kannst Antworten ändern und erneut auswerten.</p>`;result.scrollIntoView({behavior:'smooth',block:'start'});
+});
+</script></body></html>
